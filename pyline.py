@@ -1,6 +1,7 @@
 #-*- coding: utf-8 -*-
 import cv2  # opencv 사용
 import numpy as np
+import time
 
 
 def grayscale(img):  # 흑백이미지로 변환
@@ -33,9 +34,21 @@ def region_of_interest(img, vertices, color3=(255, 255, 255), color1=255):  # RO
 
 
 def draw_lines(img, lines, color=[255, 0, 0], thickness=2):  # 선 그리기
+    
     for line in lines:
-        for x1, y1, x2, y2 in line:
-            cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+        r, theta = lines[0]
+        a = np.cos(theta)
+        b = np.sin(theta)
+        x0 = a*r
+        y0 = b*r
+        x1 = int(x0 + 1000*(-b))
+        y1 = int(y0 + 1000*a)
+        x2 = int(x0 - 1000*(-b))
+        y2 = int(y0 - 1000*a)
+        cv2.line(img, (x1, y1), (x2, y2), color, thickness)
+        
+        #for x1, y1, x2, y2 in line:
+        #    cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
 def draw_fit_line(img, lines, color=[255, 0, 0], thickness=10):  # 대표선 그리기
@@ -45,11 +58,13 @@ def draw_fit_line(img, lines, color=[255, 0, 0], thickness=10):  # 대표선 그
 def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):  # 허프 변환
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len,
                             maxLineGap=max_line_gap)
-    # line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
-    # draw_lines(line_img, lines)
+    '''
+    line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
+    draw_lines(line_img, lines)
 
+    return line_img
+    '''
     return lines
-
 
 def weighted_img(img, initial_img, a=1, b=1., c=0.):  # 두 이미지 operlap 하기
     return cv2.addWeighted(initial_img, a, img, b, c)
@@ -67,54 +82,96 @@ def get_fitline(img, f_lines):  # 대표선 구하기
     result = [x1, y1, x2, y2]
     return result
 
+#cap=cv2.VideoCapture('test.mp4')
+#cv2.nameWindow('result')
 
-#while True:
-   # cap = cv2.VideoCapture(0)
-   # cap.set(3, 320)
-   # cap.set(4, 240)
 
-   # ret, image = cap.read()
+try:
+    print('Camera Open')
+    cap = cv2.VideoCapture(0)
+except:
+    print('Can not Open')
 
-height, width = image.shape[:2] # 이미지 높이, 너비
-#if ii == 0:
-gray_img = grayscale(image)  # 흑백이미지로 변환
+cap.set(3, 320)
+cap.set(4, 240)
 
-blur_img = gaussian_blur(gray_img, 3)  # Blur 효과
+if cap.isOpened() == False :
+    print('Can\'t open the video')
 
-canny_img = canny(blur_img, 70, 210)  # Canny edge 알고리즘
+while True:
 
-vertices = np.array([[(50, height), (width / 2 - 45, height / 2 + 60), (width / 2 + 45, height / 2 + 60),
-                      (width - 50, height)]], dtype=np.int32)
-ROI_img = region_of_interest(canny_img, vertices)  # ROI 설정
+    ret, image = cap.read()
+    
+    if not ret:
+        print('Error')
+        break
+    
+    
 
-line_arr = hough_lines(ROI_img, 1, 1 * np.pi / 180, 30, 10, 20)  # 허프 변환
-line_arr = np.squeeze(line_arr)
+    height, width = image.shape[:2] # 이미지 높이, 너비
+    #if ii == 0:
+    
+    #height = 240
+    #width = 320
+    gray_img = grayscale(image)  # 흑백이미지로 변환
 
-# 기울기 구하기
-slope_degree = (np.arctan2(line_arr[:, 1] - line_arr[:, 3], line_arr[:, 0] - line_arr[:, 2]) * 180) / np.pi
+    blur_img = gaussian_blur(gray_img, 3)  # Blur 효과
 
-# 수평 기울기 제한
-line_arr = line_arr[np.abs(slope_degree) < 160]
-slope_degree = slope_degree[np.abs(slope_degree) < 160]
-# 수직 기울기 제한
-line_arr = line_arr[np.abs(slope_degree) > 95]
-slope_degree = slope_degree[np.abs(slope_degree) > 95]
-# 필터링된 직선 버리기
-L_lines, R_lines = line_arr[(slope_degree > 0), :], line_arr[(slope_degree < 0), :]
-temp = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
-L_lines, R_lines = L_lines[:, None], R_lines[:, None]
-# 왼쪽, 오른쪽 각각 대표선 구하기
-left_fit_line = get_fitline(image, L_lines)
-right_fit_line = get_fitline(image, R_lines)
-# 대표선 그리기
-draw_fit_line(temp, left_fit_line)
-draw_fit_line(temp, right_fit_line)
+    canny_img = canny(blur_img, 70, 210)  # Canny edge 알고리즘
 
-result = weighted_img(temp, image)  # 원본 이미지에 검출된 선 overlap
-cv2.imshow('result', result)  # 결과 이미지 출력
+    vertices = np.array([[(50, height), (width / 2 - 45, height / 2 + 60), (width / 2 + 45, height / 2 + 60),
+                          (width - 50, height)]], dtype=np.int32)
+    ROI_img = region_of_interest(canny_img, vertices)  # ROI 설정
+    
+    lines = hough_lines(ROI_img, 1, 1 * np.pi / 180, 30, 10, 20)
 
-if cv2.waitKey(1) & 0xff == ord('c'):
-    break
+    draw_lines(image, lines)
+
+    '''
+    hough_img = hough_lines(ROI_img, 1, 1 * np.pi / 180, 30, 10, 20)  # 허프 변환
+    
+    line_arr = np.squeeze(line_arr)
+
+    # 기울기 구하기
+    #slope_degree = (np.arctan2(line_arr[:, 1] - line_arr[:, 3], line_arr[:, 0] - line_arr[:, 2]) * 180) / np.pi
+    slope_degree = (np.arctan2(line_arr[1] - line_arr[3], line_arr[0] - line_arr[2]) * 180) / np.pi
+    
+
+    # 수평 기울기 제한
+    line_arr = line_arr[np.abs(slope_degree) < 160]
+    slope_degree = slope_degree[np.abs(slope_degree) < 160]
+    # 수직 기울기 제한
+    line_arr = line_arr[np.abs(slope_degree) > 95]
+    slope_degree = slope_degree[np.abs(slope_degree) > 95]
+    # 필터링된 직선 버리기
+    L_lines, R_lines = line_arr[(slope_degree > 0), :], line_arr[(slope_degree < 0), :]
+    temp = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
+    L_lines, R_lines = L_lines[:, None], R_lines[:, None]
+    # 왼쪽, 오른쪽 각각 대표선 구하기
+    #left_fit_line = get_fitline(image, L_lines)
+    #right_fit_line = get_fitline(image, R_lines)
+    # 대표선 그리기
+    #draw_fit_line(temp, left_fit_line)
+    #draw_fit_line(temp, right_fit_line)
+
+    draw_lines(temp, L_lines)
+    draw_lines(temp, R_lines)
+    
+    
+    result = weighted_img(hough_img, image)  # 원본 이미지에 검출된 선 overlap
+    cv2.imshow('result', result)  # 결과 이미지 출력
+    '''
+    
+    cv2.imshow('cam', image)
+    
+    k = cv2.waitKey(30) & 0xff
+    if k == 27:
+        break
+    
+cap.release()
+cv2.destroyAllWindows()
+#if cv2.waitKey(1) & 0xff == ord('c'):
+#    break
 #else:
 #    print("aa")
 #    break
