@@ -1,47 +1,48 @@
-import cv2  # opencv »ç¿ë
+#-*- coding: utf-8 -*-
+import cv2  # opencv ì‚¬ìš©
 import numpy as np
 
 
-def grayscale(img):  # Èæ¹éÀÌ¹ÌÁö·Î º¯È¯
+def grayscale(img):  # í‘ë°±ì´ë¯¸ì§€ë¡œ ë³€í™˜
     return cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
 
 
-def canny(img, low_threshold, high_threshold):  # Canny ¾Ë°í¸®Áò
+def canny(img, low_threshold, high_threshold):  # Canny ì•Œê³ ë¦¬ì¦˜
     return cv2.Canny(img, low_threshold, high_threshold)
 
 
-def gaussian_blur(img, kernel_size):  # °¡¿ì½Ã¾È ÇÊÅÍ
+def gaussian_blur(img, kernel_size):  # ê°€ìš°ì‹œì•ˆ í•„í„°
     return cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
 
 
-def region_of_interest(img, vertices, color3=(255, 255, 255), color1=255):  # ROI ¼ÂÆÃ
+def region_of_interest(img, vertices, color3=(255, 255, 255), color1=255):  # ROI ì…‹íŒ…
 
-    mask = np.zeros_like(img)  # mask = img¿Í °°Àº Å©±âÀÇ ºó ÀÌ¹ÌÁö
+    mask = np.zeros_like(img)  # mask = imgì™€ ê°™ì€ í¬ê¸°ì˜ ë¹ˆ ì´ë¯¸ì§€
 
-    if len(img.shape) > 2:  # Color ÀÌ¹ÌÁö(3Ã¤³Î)¶ó¸é :
+    if len(img.shape) > 2:  # Color ì´ë¯¸ì§€(3ì±„ë„)ë¼ë©´ :
         color = color3
-    else:  # Èæ¹é ÀÌ¹ÌÁö(1Ã¤³Î)¶ó¸é :
+    else:  # í‘ë°± ì´ë¯¸ì§€(1ì±„ë„)ë¼ë©´ :
         color = color1
 
-    # vertices¿¡ Á¤ÇÑ Á¡µé·Î ÀÌ·ïÁø ´Ù°¢ÇüºÎºĞ(ROI ¼³Á¤ºÎºĞ)À» color·Î Ã¤¿ò
+    # verticesì— ì •í•œ ì ë“¤ë¡œ ì´ë¤„ì§„ ë‹¤ê°í˜•ë¶€ë¶„(ROI ì„¤ì •ë¶€ë¶„)ì„ colorë¡œ ì±„ì›€
     cv2.fillPoly(mask, vertices, color)
 
-    # ÀÌ¹ÌÁö¿Í color·Î Ã¤¿öÁø ROI¸¦ ÇÕÄ§
+    # ì´ë¯¸ì§€ì™€ colorë¡œ ì±„ì›Œì§„ ROIë¥¼ í•©ì¹¨
     ROI_image = cv2.bitwise_and(img, mask)
     return ROI_image
 
 
-def draw_lines(img, lines, color=[255, 0, 0], thickness=2):  # ¼± ±×¸®±â
+def draw_lines(img, lines, color=[255, 0, 0], thickness=2):  # ì„  ê·¸ë¦¬ê¸°
     for line in lines:
         for x1, y1, x2, y2 in line:
             cv2.line(img, (x1, y1), (x2, y2), color, thickness)
 
 
-def draw_fit_line(img, lines, color=[255, 0, 0], thickness=10):  # ´ëÇ¥¼± ±×¸®±â
+def draw_fit_line(img, lines, color=[255, 0, 0], thickness=10):  # ëŒ€í‘œì„  ê·¸ë¦¬ê¸°
     cv2.line(img, (lines[0], lines[1]), (lines[2], lines[3]), color, thickness)
 
 
-def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):  # ÇãÇÁ º¯È¯
+def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):  # í—ˆí”„ ë³€í™˜
     lines = cv2.HoughLinesP(img, rho, theta, threshold, np.array([]), minLineLength=min_line_len,
                             maxLineGap=max_line_gap)
     # line_img = np.zeros((img.shape[0], img.shape[1], 3), dtype=np.uint8)
@@ -50,11 +51,11 @@ def hough_lines(img, rho, theta, threshold, min_line_len, max_line_gap):  # ÇãÇÁ
     return lines
 
 
-def weighted_img(img, initial_img, a=1, b=1., c=0.):  # µÎ ÀÌ¹ÌÁö operlap ÇÏ±â
+def weighted_img(img, initial_img, a=1, b=1., c=0.):  # ë‘ ì´ë¯¸ì§€ operlap í•˜ê¸°
     return cv2.addWeighted(initial_img, a, img, b, c)
 
 
-def get_fitline(img, f_lines):  # ´ëÇ¥¼± ±¸ÇÏ±â
+def get_fitline(img, f_lines):  # ëŒ€í‘œì„  êµ¬í•˜ê¸°
     lines = np.squeeze(f_lines)
     lines = lines.reshape(lines.shape[0] * 2, 2)
     rows, cols = img.shape[:2]
@@ -74,43 +75,43 @@ while True:
 
     ret, image = cap.read()
 
-    # height, width = image.shape[:2] # ÀÌ¹ÌÁö ³ôÀÌ, ³Êºñ
+    # height, width = image.shape[:2] # ì´ë¯¸ì§€ ë†’ì´, ë„ˆë¹„
     if ret == True:
-        gray_img = grayscale(image)  # Èæ¹éÀÌ¹ÌÁö·Î º¯È¯
+        gray_img = grayscale(image)  # í‘ë°±ì´ë¯¸ì§€ë¡œ ë³€í™˜
 
-        blur_img = gaussian_blur(gray_img, 3)  # Blur È¿°ú
+        blur_img = gaussian_blur(gray_img, 3)  # Blur íš¨ê³¼
 
-        canny_img = canny(blur_img, 70, 210)  # Canny edge ¾Ë°í¸®Áò
+        canny_img = canny(blur_img, 70, 210)  # Canny edge ì•Œê³ ë¦¬ì¦˜
 
         vertices = np.array([[(50, height), (width / 2 - 45, height / 2 + 60), (width / 2 + 45, height / 2 + 60),
                               (width - 50, height)]], dtype=np.int32)
-        ROI_img = region_of_interest(canny_img, vertices)  # ROI ¼³Á¤
+        ROI_img = region_of_interest(canny_img, vertices)  # ROI ì„¤ì •
 
-        line_arr = hough_lines(ROI_img, 1, 1 * np.pi / 180, 30, 10, 20)  # ÇãÇÁ º¯È¯
+        line_arr = hough_lines(ROI_img, 1, 1 * np.pi / 180, 30, 10, 20)  # í—ˆí”„ ë³€í™˜
         line_arr = np.squeeze(line_arr)
 
-        # ±â¿ï±â ±¸ÇÏ±â
+        # ê¸°ìš¸ê¸° êµ¬í•˜ê¸°
         slope_degree = (np.arctan2(line_arr[:, 1] - line_arr[:, 3], line_arr[:, 0] - line_arr[:, 2]) * 180) / np.pi
 
-        # ¼öÆò ±â¿ï±â Á¦ÇÑ
+        # ìˆ˜í‰ ê¸°ìš¸ê¸° ì œí•œ
         line_arr = line_arr[np.abs(slope_degree) < 160]
         slope_degree = slope_degree[np.abs(slope_degree) < 160]
-        # ¼öÁ÷ ±â¿ï±â Á¦ÇÑ
+        # ìˆ˜ì§ ê¸°ìš¸ê¸° ì œí•œ
         line_arr = line_arr[np.abs(slope_degree) > 95]
         slope_degree = slope_degree[np.abs(slope_degree) > 95]
-        # ÇÊÅÍ¸µµÈ Á÷¼± ¹ö¸®±â
+        # í•„í„°ë§ëœ ì§ì„  ë²„ë¦¬ê¸°
         L_lines, R_lines = line_arr[(slope_degree > 0), :], line_arr[(slope_degree < 0), :]
         temp = np.zeros((image.shape[0], image.shape[1], 3), dtype=np.uint8)
         L_lines, R_lines = L_lines[:, None], R_lines[:, None]
-        # ¿ŞÂÊ, ¿À¸¥ÂÊ °¢°¢ ´ëÇ¥¼± ±¸ÇÏ±â
+        # ì™¼ìª½, ì˜¤ë¥¸ìª½ ê°ê° ëŒ€í‘œì„  êµ¬í•˜ê¸°
         left_fit_line = get_fitline(image, L_lines)
         right_fit_line = get_fitline(image, R_lines)
-        # ´ëÇ¥¼± ±×¸®±â
+        # ëŒ€í‘œì„  ê·¸ë¦¬ê¸°
         draw_fit_line(temp, left_fit_line)
         draw_fit_line(temp, right_fit_line)
 
-        result = weighted_img(temp, image)  # ¿øº» ÀÌ¹ÌÁö¿¡ °ËÃâµÈ ¼± overlap
-        cv2.imshow('result', result)  # °á°ú ÀÌ¹ÌÁö Ãâ·Â
+        result = weighted_img(temp, image)  # ì›ë³¸ ì´ë¯¸ì§€ì— ê²€ì¶œëœ ì„  overlap
+        cv2.imshow('result', result)  # ê²°ê³¼ ì´ë¯¸ì§€ ì¶œë ¥
 
         if cv2.waitKey(1) & 0xff == ord('c'):
             break
