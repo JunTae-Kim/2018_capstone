@@ -104,10 +104,8 @@ while True:
     
     if not ret:
         print('Error')
-        break
+        break;
     
-    
-
     height, width = image.shape[:2] # 이미지 높이, 너비
     #if ii == 0:
     
